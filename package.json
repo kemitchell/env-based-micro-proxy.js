@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "dependencies": {
+    "http-proxy": "^1.13.3",
+    "semver": "^5.1.0"
+  },
+  "scripts": {
+    "test": "node test.js"
+  },
+  "devDependencies": {
+    "async.series": "^0.5.2",
+    "concat-stream": "^1.5.1"
+  }
+}
