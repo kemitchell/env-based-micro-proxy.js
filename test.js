@@ -45,6 +45,15 @@ server.listen(0, function() {
           assert.equal(response.statusCode, 400)
           response.pipe(concat(function(buffered) {
             assert.equal(buffered.toString(), 'Unsupported X-API-Version')
+            done() })) }) },
+      function(done) {
+        var options = {
+          port: port, path: '/index.html',
+          headers: { 'X-API-Version': 'blah' } }
+        http.get(options, function(response) {
+          assert.equal(response.statusCode, 400)
+          response.pipe(concat(function(buffered) {
+            assert.equal(buffered.toString(), 'Invalid X-API-Version range')
             done() })) }) } ],
     function() {
       server.close() }) })

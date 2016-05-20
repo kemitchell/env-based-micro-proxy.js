@@ -1,6 +1,6 @@
 var http = require('http')
 var semver = require('semver')
-var proxy = require('http-proxy').createProxyServer({ })
+var proxy = require('http-proxy').createProxyServer()
 
 var TARGET_RE = /^TARGET_(\d+)_HOST$/
 var HEADER = 'x-api-version'
@@ -43,20 +43,26 @@ var server = http.createServer(function(request, response) {
   if (!request.headers.hasOwnProperty(HEADER)) {
     response.statusCode = 400
     response.end('Missing X-API-Version header') }
-  var range = request.headers[HEADER]
-  // Iterate version-to-host mappings.
-  var length = versions.length
-  for (var index = 0; index < length; index++) {
-    var version = versions[index]
-    // If we find a match, proxy to the corresponding host.
-    if (semver.satisfies(version, range)) {
-      var host = targets[version]
-      proxy.web(request, response, { target: host })
-      return } }
-  response.statusCode = 400
-  response.end('Unsupported X-API-Version') })
+  else {
+    var range = request.headers[HEADER]
+    if (!semver.validRange(range)) {
+      response.statusCode = 400
+      response.end('Invalid X-API-Version range') }
+    else {
+      // Iterate version-to-host mappings.
+      var matching = versions
+        .filter(function(version) {
+          return semver.satisfies(version, range) })
+        .sort(semver.rcompare)
+      // If we find matches, proxy to the highest-version host.
+      if (matching.length !== 0) {
+        var latestTarget = targets[matching[0]]
+        proxy.web(request, response, { target: latestTarget }) }
+      else {
+        response.statusCode = 400
+        response.end('Unsupported X-API-Version') } } } })
 
-server.on('close', function() { proxy.close() })
+server.on('close', proxy.close.bind(proxy))
 
 if (module.parent) {
   module.exports = server }
